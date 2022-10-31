@@ -54,6 +54,8 @@ namespace db_common {
 constexpr int kMaxWorldRows = 10000;
 const userver::storages::postgres::Query kSelectRowQuery{
     "SELECT id, randomNumber FROM World WHERE id = $1"};
+constexpr auto kClusterHostType =
+    userver::storages::postgres::ClusterHostType::kMaster;
 
 struct TableRow final {
   int id;
@@ -145,14 +147,12 @@ public:
                   db_common::GenerateRandomId);
 
     boost::container::small_vector<db_common::TableRow, 500> result{};
-    auto trx = pg_->Begin(userver::storages::postgres::ClusterHostType::kMaster,
-                          trx_options_);
     for (auto id : random_ids) {
-      result.push_back(trx.Execute(db_common::kSelectRowQuery, id)
+      result.push_back(pg_->Execute(db_common::kClusterHostType,
+                                    db_common::kSelectRowQuery, id)
                            .AsSingleRow<db_common::TableRow>(
                                userver::storages::postgres::kRowTag));
     }
-    trx.Commit();
 
     return userver::formats::json::ValueBuilder{result}.ExtractValue();
   }
@@ -161,8 +161,6 @@ private:
   const userver::storages::postgres::ClusterPtr pg_;
 
   const std::string kQueryArgName{"queries"};
-  const userver::storages::postgres::TransactionOptions trx_options_{
-      userver::storages::postgres::IsolationLevel::kReadUncommitted};
 };
 
 } // namespace multiple_queries
@@ -190,29 +188,22 @@ public:
     std::vector<int> random_ids(queries_count);
     std::generate(random_ids.begin(), random_ids.end(),
                   db_common::GenerateRandomId);
+    std::sort(random_ids.begin(), random_ids.end());
 
     boost::container::small_vector<db_common::TableRow, 500> result{};
-    {
-      auto trx = pg_->Begin(
-          userver::storages::postgres::ClusterHostType::kMaster, trx_options_);
-      for (auto id : random_ids) {
-        result.push_back(trx.Execute(db_common::kSelectRowQuery, id)
-                             .AsSingleRow<db_common::TableRow>(
-                                 userver::storages::postgres::kRowTag));
-      }
-      trx.Commit();
+    for (auto id : random_ids) {
+      result.push_back(pg_->Execute(db_common::kClusterHostType,
+                                    db_common::kSelectRowQuery, id)
+                           .AsSingleRow<db_common::TableRow>(
+                               userver::storages::postgres::kRowTag));
     }
 
     std::vector<int> random_numbers(queries_count);
     std::generate(random_numbers.begin(), random_numbers.end(),
                   db_common::GenerateRandomId);
 
-    {
-      auto trx = pg_->Begin(
-          userver::storages::postgres::ClusterHostType::kMaster, trx_options_);
-      trx.Execute(update_query_, random_ids, random_numbers);
-      trx.Commit();
-    }
+    pg_->Execute(db_common::kClusterHostType, update_query_, random_ids,
+                 random_numbers);
 
     return userver::formats::json::ValueBuilder{result}.ExtractValue();
   }
