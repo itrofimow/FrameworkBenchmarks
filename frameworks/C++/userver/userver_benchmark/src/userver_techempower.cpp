@@ -18,9 +18,9 @@ int Main(int argc, char* argv[]) {
       userver::components::MinimalServerComponentList()
           .Append<userver::components::Secdist>()
           .Append<userver::components::TestsuiteSupport>()
+          .Append<userver::components::Postgres>("hello-world-db")
           .Append<plaintext::Handler>()
           .Append<json::Handler>()
-          .Append<userver::components::Postgres>("hello-world-db")
           .Append<single_query::Handler>()
           .Append<multiple_queries::Handler>()
           .Append<updates::Handler>();
