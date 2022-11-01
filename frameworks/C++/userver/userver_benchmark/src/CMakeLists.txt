@@ -7,7 +7,6 @@ file(GLOB_RECURSE SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/controllers/*.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/common/*.cpp
 )
-message("${SOURCES}")
 
 include(userver/cmake/SetupEnvironment.cmake)
 include(GNUInstallDirs)

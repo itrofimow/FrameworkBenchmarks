@@ -1,13 +1,14 @@
 #pragma once
 
 #include <userver/server/handlers/http_handler_json_base.hpp>
-#include <userver/storages/postgres/postgres_fwd.hpp>
 
-namespace userver_techempower::multiple_queries {
+#include "world_cache_component.hpp"
+
+namespace userver_techempower::cached_queries {
 
 class Handler final : public userver::server::handlers::HttpHandlerJsonBase {
  public:
-  static constexpr std::string_view kName = "multiple-queries-handler";
+  static constexpr std::string_view kName = "cached-queries-handler";
 
   Handler(const userver::components::ComponentConfig& config,
           const userver::components::ComponentContext& context);
@@ -18,9 +19,9 @@ class Handler final : public userver::server::handlers::HttpHandlerJsonBase {
       userver::server::request::RequestContext&) const final;
 
  private:
-  const userver::storages::postgres::ClusterPtr pg_;
+  const WorldCacheComponent& cache_;
 
   const std::string query_arg_name_;
 };
 
-}  // namespace userver_techempower::multiple_queries
+}  // namespace userver_techempower::cached_queries

@@ -5,6 +5,7 @@
 #include <userver/storages/postgres/component.hpp>
 #include <userver/storages/secdist/component.hpp>
 
+#include "controllers/cached_queries/handler.hpp"
 #include "controllers/json/handler.hpp"
 #include "controllers/multiple_queries/handler.hpp"
 #include "controllers/plaintext/handler.hpp"
@@ -23,7 +24,9 @@ int Main(int argc, char* argv[]) {
           .Append<json::Handler>()
           .Append<single_query::Handler>()
           .Append<multiple_queries::Handler>()
-          .Append<updates::Handler>();
+          .Append<updates::Handler>()
+          .Append<cached_queries::WorldCacheComponent>()
+          .Append<cached_queries::Handler>();
 
   return userver::utils::DaemonMain(argc, argv, component_list);
 }
