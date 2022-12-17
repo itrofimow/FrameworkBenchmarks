@@ -1,8 +1,7 @@
 #pragma once
 
 #include <userver/server/handlers/http_handler_json_base.hpp>
-#include <userver/storages/postgres/postgres_fwd.hpp>
-#include <userver/storages/postgres/query.hpp>
+#include <userver/storages/mysql/cluster.hpp>
 
 namespace userver_techempower::updates {
 
@@ -19,10 +18,10 @@ class Handler final : public userver::server::handlers::HttpHandlerJsonBase {
       userver::server::request::RequestContext&) const final;
 
  private:
-  const userver::storages::postgres::ClusterPtr pg_;
+  const std::shared_ptr<userver::storages::mysql::Cluster> mysql_;
 
   const std::string query_arg_name_;
-  const userver::storages::postgres::Query update_query_;
+  const std::string update_query_;
 };
 
 }  // namespace userver_techempower::updates

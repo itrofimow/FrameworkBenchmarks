@@ -8,5 +8,14 @@
         ]
       }]
     }
+  },
+  "mysql_settings": {
+    "hello-world-db": {
+      "hosts": ["tfb-database"],
+      "port": 3306,
+      "user": "benchmarkdbuser",
+      "password": "benchmarkdbpass",
+      "database": "hello_world"
+    }
   }
 }

@@ -2,7 +2,7 @@
 
 #include <userver/server/handlers/http_handler_json_base.hpp>
 
-#include <userver/storages/postgres/postgres_fwd.hpp>
+#include <userver/storages/mysql/cluster.hpp>
 
 namespace userver_techempower::single_query {
 
@@ -19,7 +19,7 @@ class Handler final : public userver::server::handlers::HttpHandlerJsonBase {
       userver::server::request::RequestContext&) const final;
 
  private:
-  const userver::storages::postgres::ClusterPtr pg_;
+  const std::shared_ptr<userver::storages::mysql::Cluster> mysql_;
 };
 
 }  // namespace userver_techempower::single_query

@@ -1,8 +1,9 @@
+#include <userver/clients/dns/component.hpp>
 #include <userver/components/minimal_server_component_list.hpp>
 #include <userver/testsuite/testsuite_support.hpp>
 #include <userver/utils/daemon_run.hpp>
 
-#include <userver/storages/postgres/component.hpp>
+#include <userver/storages/mysql/component.hpp>
 #include <userver/storages/secdist/component.hpp>
 
 #include "controllers/cached_queries/handler.hpp"
@@ -19,7 +20,8 @@ int Main(int argc, char* argv[]) {
       userver::components::MinimalServerComponentList()
           .Append<userver::components::Secdist>()
           .Append<userver::components::TestsuiteSupport>()
-          .Append<userver::components::Postgres>("hello-world-db")
+          .Append<userver::components::MySQL>("hello-world-db")
+          .Append<userver::clients::dns::Component>()
           .Append<plaintext::Handler>()
           .Append<json::Handler>()
           .Append<single_query::Handler>()

@@ -19,6 +19,8 @@ components_manager:
     default_task_processor: main-task-processor
 
     components:                         # Configuring components that were registered via component_list
+        dns-client:
+            fs-task-processor: fs-task-processor
         server:
             listener:                   # configuring the main listening socket...
                 port: 8080              # ...to listen on this port and...
@@ -29,7 +31,7 @@ components_manager:
             loggers:
                 default:
                     file_path: '@stderr'
-                    level: ERROR
+                    level: error
                     overflow_behavior: discard  # Drop logs if the system is too busy to write them down.
 
         tracer:                                 # Component that helps to trace execution times and requests in logs.
@@ -38,12 +40,12 @@ components_manager:
         dynamic-config:                      # Dynamic config storage options, do nothing
             fs-cache-path: ''
         dynamic-config-fallbacks:            # Load options from file and push them into the dynamic config storage.
-            fallback-path: /src/dynamic_config_fallback.json
+            fallback-path: /app/dynamic_config_fallback.json
 
         testsuite-support:
 
         secdist: # Component that stores configuration of hosts and passwords
-            config: /src/secure_data.json  # Values are supposed to be stored in this file
+            config: /app/secure_data.json  # Values are supposed to be stored in this file
             missing-ok: false                             # ... but if the file is missing it is still ok
 
         plaintext-handler:
@@ -79,7 +81,7 @@ components_manager:
             task_processor: main-task-processor
 
         world-pg-cache:
-            pgcomponent: hello-world-db
+            mysql-component: hello-world-db
             update-types: only-full
             update-interval: 1s
             update-correction: 50ms

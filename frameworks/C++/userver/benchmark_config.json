@@ -12,7 +12,7 @@
         "port": 8080,
         "approach": "Realistic",
         "classification": "Micro",
-        "database": "postgres",
+        "database": "mysql",
         "framework": "userver",
         "language": "C++",
         "flavor": "None",

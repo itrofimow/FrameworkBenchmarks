@@ -14,4 +14,4 @@ include(GNUInstallDirs)
 add_subdirectory(userver)
 
 add_executable(${PROJECT_NAME} ${SOURCES} userver_techempower.cpp)
-target_link_libraries(${PROJECT_NAME} PRIVATE userver-core userver-postgresql)
+target_link_libraries(${PROJECT_NAME} PRIVATE userver-core userver-mysql mariadb)
