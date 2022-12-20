@@ -21,7 +21,6 @@ userver::formats::json::Value Handler::HandleRequestJsonThrow(
         userver::server::request::RequestContext &) const {
   const auto row =
           mysql_->Execute(db_helpers::kClusterHostType,
-                          userver::engine::Deadline::FromDuration(std::chrono::milliseconds{1750}),
                           db_helpers::kSelectRowQuery,
                           db_helpers::GenerateRandomId())
                   .AsSingleRow<db_helpers::WorldTableRow>();

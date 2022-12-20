@@ -31,10 +31,8 @@ userver::formats::json::Value Handler::HandleRequestJsonThrow(
                 db_helpers::GenerateRandomId);
 
   boost::container::small_vector<db_helpers::WorldTableRow, 500> result{};
-  const auto deadline = userver::engine::Deadline::FromDuration(std::chrono::milliseconds{1750});
   for (auto id: random_ids) {
     result.push_back(mysql_->Execute(db_helpers::kClusterHostType,
-                                     deadline,
                                      db_helpers::kSelectRowQuery, id)
                              .AsSingleRow<db_helpers::WorldTableRow>());
   }

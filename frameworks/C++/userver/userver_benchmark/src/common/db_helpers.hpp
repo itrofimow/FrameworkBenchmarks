@@ -3,11 +3,12 @@
 #include <userver/formats/json/value.hpp>
 #include <userver/server/http/http_request.hpp>
 #include <userver/storages/mysql/cluster_host_type.hpp>
+#include <userver/storages/mysql/query.hpp>
 
 namespace userver_techempower::db_helpers {
 
 constexpr int kMaxWorldRows = 10000;
-const std::string kSelectRowQuery{
+const userver::storages::mysql::Query kSelectRowQuery{
     "SELECT id, randomNumber FROM World WHERE id = ?"};
 constexpr auto kClusterHostType =
     userver::storages::mysql::ClusterHostType::kMaster;

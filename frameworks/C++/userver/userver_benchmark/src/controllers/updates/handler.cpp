@@ -40,10 +40,8 @@ userver::formats::json::Value Handler::HandleRequestJsonThrow(
   std::sort(random_ids.begin(), random_ids.end());
 
   boost::container::small_vector<db_helpers::WorldTableRow, 500> result{};
-  const auto deadline = userver::engine::Deadline::FromDuration(std::chrono::milliseconds{1750});
   for (auto id: random_ids) {
     result.push_back(mysql_->Execute(db_helpers::kClusterHostType,
-                                     deadline,
                                      db_helpers::kSelectRowQuery, id)
                              .AsSingleRow<db_helpers::WorldTableRow>());
   }
@@ -53,7 +51,7 @@ userver::formats::json::Value Handler::HandleRequestJsonThrow(
   for (auto& row : result) {
     row.random_number = db_helpers::GenerateRandomValue();
   }
-  mysql_->InsertMany(deadline, update_query_, result);
+  mysql_->InsertMany(update_query_, result);
 
   return result_builder.ExtractValue();
 }
