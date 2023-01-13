@@ -1,7 +1,8 @@
-FROM userver_ccache AS builder
+FROM ghcr.io/userver-framework/docker-userver-build-base:v1a AS ccache_holder
 WORKDIR /src
 RUN ccache -s
-RUN ls -a
+RUN git clone https://github.com/userver-framework/userver.git && \
+    cd userver && git checkout b69a8db23844d3abbb68e40a502eae0ecd2e4b62
 COPY userver_benchmark/ ./
 RUN mkdir build && cd build && \
     cmake -DUSERVER_IS_THE_ROOT_PROJECT=0 -DUSERVER_OPEN_SOURCE_BUILD=1 -DUSERVER_FEATURE_CRYPTOPP_BLAKE2=0 \
@@ -11,12 +12,6 @@ RUN mkdir build && cd build && \
           -DCMAKE_BUILD_TYPE=RelWithDebInfo .. && \
     make -j $(nproc)
 
-FROM builder AS runner
+RUN ls | grep -xv "userver" | xargs rm -r
 RUN ccache -s
-WORKDIR /app
-COPY userver_configs/* ./
-COPY --from=builder /userver_build/build/userver_techempower ./
-
-EXPOSE 8080
-CMD ./userver_techempower -c ./static_config.yaml
 
