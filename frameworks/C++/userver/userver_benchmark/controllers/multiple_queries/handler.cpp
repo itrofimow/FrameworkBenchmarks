@@ -12,7 +12,9 @@ namespace {
 
 constexpr std::size_t kBestConcurrencyWildGuess = 256;
 
-}
+constexpr std::chrono::milliseconds kQueryQueueTimeout{7500};
+
+}  // namespace
 
 Handler::Handler(const userver::components::ComponentConfig& config,
                  const userver::components::ComponentContext& context)
@@ -43,14 +45,19 @@ userver::formats::json::Value Handler::GetResponse(int queries) const {
   {
     const auto lock = semaphore_.Acquire();
 
-    auto trx = pg_->Begin(db_helpers::kClusterHostType, {});
-    for (auto& value : result) {
-      value.random_number = trx.Execute(db_helpers::kSelectRowQuery, value.id)
-                                .AsSingleRow<db_helpers::WorldTableRow>(
-                                    userver::storages::postgres::kRowTag)
-                                .random_number;
+    auto query_queue =
+        pg_->CreateQueryQueue(db_helpers::kClusterHostType, kQueryQueueTimeout);
+    for (const auto& value : result) {
+      query_queue.Push(kQueryQueueTimeout, db_helpers::kSelectRowQuery,
+                       value.id);
     }
-    trx.Commit();
+    const auto db_result = query_queue.Collect(kQueryQueueTimeout);
+    for (std::size_t i = 0; i < db_result.size(); ++i) {
+      result[i].random_number = db_result[i]
+                                    .AsSingleRow<db_helpers::WorldTableRow>(
+                                        userver::storages::postgres::kRowTag)
+                                    .random_number;
+    }
   }
 
   return userver::formats::json::ValueBuilder{result}.ExtractValue();

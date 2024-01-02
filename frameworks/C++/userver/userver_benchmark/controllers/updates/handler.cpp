@@ -6,6 +6,15 @@
 
 #include <boost/container/small_vector.hpp>
 
+namespace userver::storages::postgres::io::traits {
+
+// Hijack userver's PG traits to work with small_vector
+template <typename T, std::size_t Size>
+struct IsCompatibleContainer<boost::container::small_vector<T, Size>>
+    : std::true_type {};
+
+}  // namespace userver::storages::postgres::io::traits
+
 namespace userver_techempower::updates {
 
 namespace {
@@ -20,7 +29,9 @@ FROM ( SELECT
 WHERE w.id = new_numbers.id
 )"};
 
-constexpr std::size_t kBestConcurrencyWildGuess = 128;
+constexpr std::size_t kBestConcurrencyWildGuess = 256;
+
+constexpr std::chrono::milliseconds kQueryQueueTimeout{7500};
 
 }  // namespace
 
@@ -44,41 +55,40 @@ userver::formats::json::Value Handler::HandleRequestJsonThrow(
 }
 
 userver::formats::json::Value Handler::GetResponse(int queries) const {
-  // userver's PG doesn't accept boost::small_vector as an input, sadly
-  std::vector<db_helpers::WorldTableRow> values(queries);
-  for (auto& value : values) {
-    value.id = db_helpers::GenerateRandomId();
+  boost::container::small_vector<int, 20> ids(queries);
+  boost::container::small_vector<int, 20> values(queries);
+  for (auto& id : ids) {
+    id = db_helpers::GenerateRandomId();
   }
   // we have to sort ids to not deadlock in update
-  std::sort(values.begin(), values.end(),
-            [](const auto& lhs, const auto& rhs) { return lhs.id < rhs.id; });
+  std::sort(ids.begin(), ids.end(),
+            [](const auto& lhs, const auto& rhs) { return lhs < rhs; });
 
-  boost::container::small_vector<db_helpers::WorldTableRow, 20> result;
+  boost::container::small_vector<db_helpers::WorldTableRow, 20> result(queries);
 
   {
     const auto lock = semaphore_.Acquire();
 
-    auto trx = pg_->Begin(db_helpers::kClusterHostType, {});
-    for (auto& value : values) {
-      value.random_number = trx.Execute(db_helpers::kSelectRowQuery, value.id)
-                                .AsSingleRow<db_helpers::WorldTableRow>(
-                                    userver::storages::postgres::kRowTag)
-                                .random_number;
+    {
+      auto query_queue = pg_->CreateQueryQueue(db_helpers::kClusterHostType,
+                                               kQueryQueueTimeout);
+      for (const auto& id : ids) {
+        query_queue.Push(kQueryQueueTimeout, db_helpers::kSelectRowQuery, id);
+      }
+      const auto db_result = query_queue.Collect(kQueryQueueTimeout);
+      for (std::size_t i = 0; i < db_result.size(); ++i) {
+        result[i] = db_result[i].AsSingleRow<db_helpers::WorldTableRow>(
+            userver::storages::postgres::kRowTag);
+      }
     }
 
-    // We copy values here (and hope compiler optimizes it into one memcpy call)
-    // to not serialize into json within transaction
-    result.assign(values.begin(), values.end());
-
     for (auto& value : values) {
-      value.random_number = db_helpers::GenerateRandomValue();
+      value = db_helpers::GenerateRandomValue();
     }
-
-    trx.ExecuteDecomposeBulk(update_query_, values, values.size());
-    trx.Commit();
+    pg_->Execute(db_helpers::kClusterHostType, update_query_, ids, values);
   }
 
-  return userver::formats::json::ValueBuilder{values}.ExtractValue();
+  return userver::formats::json::ValueBuilder{result}.ExtractValue();
 }
 
 }  // namespace userver_techempower::updates
